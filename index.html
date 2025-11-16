@@ -10,181 +10,15 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="favicon.svg">
 
+<!-- Unified stylesheet -->
+<link rel="stylesheet" href="/styles.css">
+
 <!-- Marked.js for markdown parsing -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <!-- DOMPurify for sanitizing HTML produced by marked -->
 <script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.0/dist/purify.min.js"></script>
 
 <meta name="theme-color" content="#f5f7fb" id="themeColorMeta">
-
-<style>
-/* Core variables */
-:root{
-  --radius:12px;
-  --accent:#2563eb; /* improved accessible blue */
-  --accent-2:#4f7cff;
-  --muted:#888;
-  --transition:.24s cubic-bezier(.2,.9,.2,1);
-
-  --bg: #f5f7fb;
-  --surface: #ffffff;
-  --text: #0b1220;
-  --muted-text: #6b7280;
-  --border: rgba(0,0,0,0.06);
-  --elev: rgba(11,18,32,0.04);
-
-  --code-bg: #eef2ff;
-  --code-text: #0b1220;
-  --preview-bg: linear-gradient(180deg,transparent,rgba(0,0,0,0.02));
-  --modal-bg: rgba(11,18,32,0.6);
-  --input-bg: rgba(0,0,0,0.02);
-
-  --rename-bg-hover: rgba(79,124,255,0.08);
-  --delete-bg-hover: rgba(255,90,90,0.06);
-  --delete-color: #d64545;
-
-  --header-height: 56px;
-  --app-padding: 16px;
-
-  /* sizes */
-  --sidebar-width: 320px;
-}
-
-/* Dark overrides */
-body.dark{
-  --bg: #0b0d10;
-  --surface: #0f151a;
-  --text: #e6eef6;
-  --muted-text: #8b95a1;
-  --border: rgba(255,255,255,0.04);
-  --elev: rgba(255,255,255,0.02);
-  --code-bg: #071023;
-  --code-text: #cfe6ff;
-  --preview-bg: linear-gradient(180deg,transparent,rgba(255,255,255,0.02));
-  --modal-bg: rgba(0,0,0,0.5);
-
-  --rename-bg-hover: rgba(112,150,255,0.08);
-  --delete-bg-hover: rgba(255,90,90,0.04);
-}
-
-/* Light explicit */
-body.light{
-  /* no-op: root already light defaults */
-}
-
-/* Reset / Layout */
-*{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0;font-family:Inter,Segoe UI,Roboto,system-ui,Arial;background:var(--bg);color:var(--text);transition:background var(--transition),color var(--transition)}
-.header{height:var(--header-height);display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:var(--surface);border-bottom:1px solid var(--border)}
-.header h1{margin:0;font-size:18px}
-
-/* Primary button styling (fixed blue look, accessible contrast) */
-.btn{
-  background:linear-gradient(180deg,var(--accent),var(--accent-2));
-  color:#fff;border:0;padding:8px 12px;border-radius:10px;cursor:pointer;box-shadow:0 6px 18px rgba(79,124,255,0.08);
-  transition:transform .12s ease,box-shadow .12s ease,opacity .12s ease;
-}
-.btn:hover{ transform:translateY(-1px); box-shadow:0 10px 26px rgba(79,124,255,0.12); opacity:0.98; }
-.btn:active{ transform:translateY(0); box-shadow:0 6px 12px rgba(79,124,255,0.08); }
-
-/* App container expands to nearly full viewport */
-.container{
-  width: calc(100% - (var(--app-padding) * 2));
-  max-width: none;
-  margin: var(--app-padding);
-  display:grid;
-  grid-template-columns:var(--sidebar-width) 1fr;
-  gap:18px;
-  height: calc(100vh - var(--header-height) - (var(--app-padding) * 2));
-}
-
-/* Sidebar */
-.sidebar{background:var(--surface);padding:12px;border-radius:12px;border:1px solid var(--border);height:100%;overflow:auto}
-.folder-list{display:flex;flex-direction:column;gap:6px;min-height:80px}
-
-/* Folder row UI & buttons (styled) */
-.folder{display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:8px;background:linear-gradient(180deg,transparent,var(--elev));cursor:grab;border:1px solid transparent;transition:background .12s,transform .08s}
-.folder-row{display:flex;align-items:center;gap:8px}
-.folder:hover{transform:translateY(-1px)}
-.folder.drag-over{outline:2px dashed var(--accent)}
-.folder.active{background:linear-gradient(180deg, rgba(79,124,255,0.08), rgba(79,124,255,0.04));border-color:rgba(79,124,255,0.14)}
-.folder .name{flex:1;font-weight:600;user-select:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.folder .count{font-size:12px;color:var(--muted-text)}
-.folder .grab{cursor:grab;padding:6px;border-radius:6px}
-.folder-actions{display:flex;gap:6px;align-items:center}
-.folder-actions button[data-act]{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:34px;height:30px;padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:13px}
-.folder-actions button[data-act]:focus{outline:2px solid rgba(0,0,0,0.06);outline-offset:2px}
-.folder-actions button[data-act="rename"]:hover{ background: var(--rename-bg-hover); border-color: rgba(79,124,255,0.14); }
-.folder-actions button[data-act="delete"]{ color:var(--delete-color); }
-.folder-actions button[data-act="delete"]:hover{ background: var(--delete-bg-hover); border-color: rgba(255,90,90,0.12); }
-
-/* Folder toggle caret */
-.folder-toggle{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;background:transparent;font-size:12px;color:var(--muted-text);transition:transform .18s ease}
-.folder-toggle.expanded{transform:rotate(90deg);color:var(--accent)}
-
-/* Expand/collapse animations for folder notes */
-.folder-notes{padding-left:34px;display:block;overflow:hidden;max-height:0;opacity:0;transform:translateY(-6px);transition:max-height .32s cubic-bezier(.2,.9,.2,1),opacity .22s ease,transform .22s ease}
-.folder-notes.show{max-height:800px;opacity:1;transform:none}
-.folder-note{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:6px;background:transparent;border:1px solid transparent;cursor:pointer}
-.folder-note:hover{background:var(--elev)}
-.folder-note .title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
-.folder-note .meta{font-size:11px;color:var(--muted-text);margin-left:8px}
-
-/* Add/inline */
-.folder-add{width:100%;margin-top:10px;padding:8px;border-radius:8px;border:1px dashed var(--border);background:transparent;color:var(--muted-text);cursor:pointer}
-.folder-edit-input{width:100%;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--input-bg);color:var(--text)}
-
-/* Main + toolbar + tags */
-.main{display:flex;flex-direction:column;gap:12px;height:100%}
-.toolbar{display:flex;gap:8px;align-items:center}
-.search{flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
-.tag-filter{display:flex;gap:8px;flex-wrap:wrap}
-.tag-pill{padding:6px 8px;border-radius:999px;background:transparent;border:1px solid var(--border);cursor:pointer;font-size:13px;color:var(--text)}
-.tag-pill.active{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border-color:transparent}
-
-/* Editor */
-.editor{display:grid;grid-template-columns:1fr 420px;gap:12px;height:calc(100% - 56px)}
-.editor-left{background:var(--surface);padding:12px;border-radius:12px;border:1px solid var(--border);overflow:auto}
-.toolbar-md{display:flex;gap:6px;margin-bottom:8px}
-.md-btn{padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;color:var(--text)}
-.title-input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);margin-bottom:8px;background:transparent;color:var(--text)}
-.textarea{width:100%;min-height:260px;padding:12px;border-radius:8px;border:1px solid var(--border);resize:vertical;background:transparent;color:var(--text)}
-.editor-right{background:var(--surface);padding:12px;border-radius:12px;border:1px solid var(--border);overflow:auto}
-.preview{max-height:100%;overflow:auto;padding:12px;border-radius:8px;background:var(--preview-bg);color:var(--text)}
-
-/* Note cards */
-.notes-grid{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;transition:opacity .28s}
-.note-card{background:var(--surface);padding:12px;border-radius:12px;border:1px solid var(--border);cursor:grab;display:flex;flex-direction:column;gap:8px}
-.note-card.dragging{opacity:.5}
-.note-title{font-weight:700;margin-bottom:6px}
-.note-meta{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted-text)}
-.note-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.note-tag{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid var(--border)}
-
-/* Modal */
-.modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:var(--modal-bg);z-index:1100}
-.modal{background:var(--surface);padding:16px;border-radius:10px;border:1px solid var(--border);min-width:320px;max-width:90%;color:var(--text);box-shadow:0 10px 30px rgba(0,0,0,0.12)}
-.modal .message{margin-bottom:12px;color:var(--muted-text)}
-.modal .actions{display:flex;gap:8px;justify-content:flex-end}
-.modal .modal-btn{padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer}
-.modal .modal-btn.primary{background:var(--accent);color:#fff;border-color:transparent}
-
-/* Responsive & mobile toggle fix */
-.mobile-folders-btn{display:none;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer}
-@media (max-width:900px){
-  .container{grid-template-columns:1fr;margin:0;width:100%;height:calc(100vh - var(--header-height));}
-  .sidebar{display:none;position:fixed;left:0;top:var(--header-height);width:var(--sidebar-width);height:calc(100vh - var(--header-height));z-index:1200;box-shadow:0 10px 40px rgba(0,0,0,0.2)}
-  body.show-sidebar .sidebar{display:block}
-  .mobile-folders-btn{display:inline-flex}
-  .editor{grid-template-columns:1fr;height:auto}
-  .preview{max-height:260px}
-  .header h1{font-size:16px}
-}
-
-/* Small touch improvements */
-button{ -webkit-tap-highlight-color: transparent; }
-</style>
 </head>
 <body>
   <div class="header">
@@ -193,7 +27,7 @@ button{ -webkit-tap-highlight-color: transparent; }
       <h1 style="margin:0;font-size:18px">OR Notebook</h1>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
-      <button id="themeToggle" class="btn">Theme: System</button>
+      <a id="settingsLink" href="/settings" class="btn" title="Settings">⚙ Settings</a>
     </div>
   </div>
 
@@ -262,9 +96,11 @@ button{ -webkit-tap-highlight-color: transparent; }
       </div>
     </div>
   </div>
-
 <script>
-/* Full app script + service worker registration + improved mobile toggle behavior */
+/* Inline app script remains (folders, notes, preview, etc.)
+   I removed the theme toggle logic here; theme is applied by app.js to centralize behavior.
+   Note: app.js is loaded after this script and will apply the stored theme and listen for changes.
+*/
 
 /* helpers */
 const uid = (p='n')=>p+'_'+Math.random().toString(36).slice(2,9);
@@ -286,7 +122,6 @@ const currentFolderName = qs('#currentFolderName');
 const searchInput = qs('#search');
 const tagInput = qs('#tagInput');
 const tagFilter = qs('#tagFilter');
-const themeToggle = qs('#themeToggle');
 const mobileFoldersBtn = qs('#mobileFoldersBtn');
 const sidebar = qs('#sidebar');
 
@@ -326,30 +161,6 @@ if(!currentFolderId || !folders.find(f => f.id === currentFolderId)) currentFold
 function loadExpandedState(){ try{ const raw = localStorage.getItem('or_expandedFolders'); const arr = raw ? JSON.parse(raw) : []; return new Set(Array.isArray(arr)?arr:[]); }catch(e){ return new Set(); } }
 function saveExpandedState(){ try{ localStorage.setItem('or_expandedFolders', JSON.stringify(Array.from(expandedFolders))); }catch(e){} }
 const expandedFolders = loadExpandedState();
-
-/* Theme handling */
-let savedTheme = localStorage.getItem('or_theme')||'system';
-function updateThemeMetaForMode(mode){
-  if(mode === 'dark'){ themeColorMeta.setAttribute('content', '#0f151a'); }
-  else { themeColorMeta.setAttribute('content', '#ffffff'); }
-}
-function applyTheme(t){
-  let mode = t;
-  if(t === 'system'){ mode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
-  document.body.classList.remove('light','dark');
-  document.body.classList.add(mode);
-  const label = (t[0].toUpperCase() + t.slice(1));
-  themeToggle.textContent = 'Theme: ' + label;
-  updateThemeMetaForMode(mode);
-}
-applyTheme(savedTheme);
-themeToggle.onclick = ()=>{
-  const list=['light','dark','system'];
-  let i = list.indexOf(savedTheme);
-  savedTheme = list[(i+1)%3];
-  localStorage.setItem('or_theme', savedTheme);
-  applyTheme(savedTheme);
-};
 
 /* escape html */
 function escapeHtml(s){
@@ -656,7 +467,7 @@ document.addEventListener('click', (e)=>{ if(!currentInlineEditor) return; const
 function updateFolderHeader(){ const f = folders.find(x=>x.id===currentFolderId); currentFolderName.textContent = f ? f.name : '(none)'; }
 
 /* Expose small API for debugging */
-window.orNotebook = { folders, notesMap, renderFolders, loadNotes, applyTheme, expandedFolders };
+window.orNotebook = { folders, notesMap, renderFolders, loadNotes, expandedFolders };
 
 /* Service worker registration (simple offline caching) */
 if('serviceWorker' in navigator){
@@ -669,5 +480,9 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
+
+<!-- Enhancement & offline autocomplete + theme script -->
+<script src="/app.js"></script>
+
 </body>
 </html>

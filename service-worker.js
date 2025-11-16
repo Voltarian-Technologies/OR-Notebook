@@ -1,17 +1,18 @@
-// Simple service worker: app-shell caching strategy
-const CACHE_NAME = 'or-notebook-v1';
+// Simple service worker: app-shell caching strategy (updated to cache unified stylesheet and handle theme-change messages)
+const CACHE_NAME = 'or-notebook-v2';
 const ASSETS = [
-  '/', // allow navigation fallback
-  'or_notebook.html',
+  '/', // navigation fallback
+  'index.html',
+  'settings/index.html',
+  'app.js',
+  'styles.css',
   'manifest.json',
   'favicon.svg',
-  // CDN resources are attempted network-first; you can add local copies if desired
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      // attempt to add app shell; ignore failures for missing files in dev
       return cache.addAll(ASSETS.map(s => new Request(s, {cache: 'reload'}))).catch(() => Promise.resolve());
     }).then(() => self.skipWaiting())
   );
@@ -25,38 +26,44 @@ self.addEventListener('activate', event => {
   );
 });
 
+// Service worker will forward incoming theme-change messages to all clients
+self.addEventListener('message', event => {
+  const data = event.data || {};
+  if(data && data.type === 'theme-change'){
+    const theme = data.theme;
+    self.clients.matchAll({ includeUncontrolled: true }).then(clients => {
+      clients.forEach(c => {
+        try { c.postMessage({ type: 'theme-change', theme }); } catch(e){}
+      });
+    });
+  }
+});
+
 self.addEventListener('fetch', event => {
   const req = event.request;
-  // navigation requests: try network first, fallback to cache
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req).then(res => {
-        // clone into cache
         const clone = res.clone();
         caches.open(CACHE_NAME).then(cache => { cache.put(req, clone); });
         return res;
-      }).catch(() => caches.match('or_notebook.html'))
+      }).catch(() => caches.match('index.html'))
     );
     return;
   }
 
-  // for same-origin assets: cache-first
   const url = new URL(req.url);
   if (url.origin === location.origin) {
     event.respondWith(
       caches.match(req).then(cached => cached || fetch(req).then(resp => {
-        // store in cache for offline
         return caches.open(CACHE_NAME).then(cache => { cache.put(req, resp.clone()); return resp; });
       }).catch(() => cached))
     );
     return;
   }
 
-  // for cross-origin (CDN) requests: network-first with fallback to cache
+  // cross-origin network-first
   event.respondWith(
-    fetch(req).then(resp => {
-      // optionally cache cross-origin assets by request
-      return resp;
-    }).catch(() => caches.match(req))
+    fetch(req).then(resp => resp).catch(() => caches.match(req))
   );
 });

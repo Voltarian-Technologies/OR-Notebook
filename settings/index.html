@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OR Notebook — Settings</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+  <!-- Unified stylesheet -->
+  <link rel="stylesheet" href="/styles.css">
+
+  <meta name="theme-color" content="#f5f7fb" id="themeColorMeta">
+</head>
+<body>
+  <div class="card" role="main" style="max-width:820px;margin:24px auto;background:var(--surface);padding:20px;border-radius:12px;border:1px solid rgba(0,0,0,0.06)">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h1 style="margin:0 0 8px 0">Settings</h1>
+        <p style="margin:0 0 16px 0;color:var(--muted)">Choose theme and editor preferences. All settings are saved locally and work offline.</p>
+      </div>
+      <div>
+        <a class="link" href="/" aria-label="Back to app">← Back to Notebook</a>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label for="themeCustom">Theme</label>
+
+        <!-- custom dropdown (now interactive + stylized) -->
+        <div class="custom-select" id="themeCustom" role="listbox" aria-label="Theme">
+          <div class="cs-selected" id="csSelected" tabindex="0" aria-haspopup="listbox" aria-expanded="false">
+            <span class="label" id="csLabel">System</span>
+            <span class="cs-arrow">▾</span>
+          </div>
+          <div class="cs-options" id="csOptions" role="listbox" aria-hidden="true">
+            <div class="cs-option" data-value="system" role="option">System</div>
+            <div class="cs-option" data-value="light" role="option">Light</div>
+            <div class="cs-option" data-value="dark" role="option">Dark</div>
+          </div>
+        </div>
+
+        <div class="hint">Choose Light, Dark, or follow System preference. Changes are applied across all open tabs immediately.</div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="row" style="display:flex;align-items:center;gap:12px;margin:12px 0">
+        <label for="autoCompleteToggle">Autocomplete on Tab</label>
+        <input id="autoCompleteToggle" type="checkbox" />
+      </div>
+      <div class="hint">When enabled, pressing Tab while editing will attempt to autocomplete the current word using your existing notes (fully offline). If no suggestion exists, a tab character is inserted.</div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">
+      <button id="saveBtn" class="btn">Save</button>
+      <a href="/" class="link" id="cancelLink">Cancel</a>
+    </div>
+
+    <div id="status" style="margin-top:12px;color:var(--muted)"></div>
+  </div>
+
+<script src="/app.js"></script>
+<script>
+  (function(){
+    const csSelected = document.getElementById('csSelected');
+    const csOptions = document.getElementById('csOptions');
+    const csLabel = document.getElementById('csLabel');
+    const optionEls = Array.from(document.querySelectorAll('.cs-option'));
+    const autoToggle = document.getElementById('autoCompleteToggle');
+    const status = document.getElementById('status');
+    const container = document.getElementById('themeCustom');
+
+    function setActiveOption(value){
+      optionEls.forEach(o=> o.classList.toggle('active', o.dataset.value === value));
+      csLabel.textContent = value[0].toUpperCase() + value.slice(1);
+      // update aria-selected
+      optionEls.forEach(o => o.setAttribute('aria-selected', o.dataset.value === value ? 'true' : 'false'));
+    }
+
+    // init values
+    const themeCurrent = window.ORApp ? window.ORApp.getThemeSetting() : (localStorage.getItem('or_theme') || 'system');
+    setActiveOption(themeCurrent);
+    csLabel.textContent = themeCurrent[0].toUpperCase() + themeCurrent.slice(1);
+
+    autoToggle.checked = window.ORApp ? window.ORApp.isAutocompleteEnabled() : (localStorage.getItem('or_autocomplete_tab') !== 'false');
+
+    function openOptions(){ csOptions.classList.add('show'); csOptions.setAttribute('aria-hidden','false'); container.classList.add('open'); csSelected.setAttribute('aria-expanded','true'); }
+    function closeOptions(){ csOptions.classList.remove('show'); csOptions.setAttribute('aria-hidden','true'); container.classList.remove('open'); csSelected.setAttribute('aria-expanded','false'); }
+
+    csSelected.addEventListener('click', (e)=>{ if(csOptions.classList.contains('show')) closeOptions(); else openOptions(); });
+    csSelected.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); csSelected.click(); } if(e.key === 'ArrowDown'){ e.preventDefault(); openOptions(); const first = optionEls[0]; first && first.focus(); } if(e.key === 'ArrowUp'){ e.preventDefault(); openOptions(); const last = optionEls[optionEls.length-1]; last && last.focus(); } });
+
+    optionEls.forEach(opt=>{
+      opt.tabIndex = 0;
+      opt.addEventListener('click', ()=> {
+        const val = opt.dataset.value;
+        setActiveOption(val);
+        closeOptions();
+        csSelected.focus();
+      });
+      opt.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter'){ e.preventDefault(); opt.click(); }
+        if(e.key === 'ArrowDown'){ e.preventDefault(); const next = opt.nextElementSibling; next && next.focus(); }
+        if(e.key === 'ArrowUp'){ e.preventDefault(); const prev = opt.previousElementSibling; prev && prev.focus(); }
+        if(e.key === 'Escape'){ e.preventDefault(); closeOptions(); csSelected.focus(); }
+      });
+    });
+
+    // click-away close
+    document.addEventListener('click', (e)=>{
+      if(!container.contains(e.target)) closeOptions();
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', ()=>{
+      const active = document.querySelector('.cs-option.active');
+      const themeVal = active ? active.dataset.value : (window.ORApp ? window.ORApp.getThemeSetting() : (localStorage.getItem('or_theme') || 'system'));
+      const enabled = !!autoToggle.checked;
+
+      if(window.ORApp){
+        window.ORApp.setThemeSetting(themeVal);
+        window.ORApp.setAutocompleteEnabled(enabled);
+      } else {
+        localStorage.setItem('or_theme', themeVal);
+        localStorage.setItem('or_autocomplete_tab', enabled ? 'true':'false');
+        // storage event fallback for other tabs
+        try{ localStorage.setItem('or_theme_update_ts', Date.now().toString()); }catch(e){}
+      }
+
+      status.textContent = 'Saved. Theme applied across open tabs.';
+      setTimeout(()=> status.textContent = '', 2400);
+    });
+  })();
+</script>
+</body>
+</html>

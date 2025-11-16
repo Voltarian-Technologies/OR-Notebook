@@ -1,0 +1,246 @@
+/* Unified stylesheet for OR Notebook (index + settings)
+   Contains variables, theming, layout, components, dropdown, and scrollbars.
+   (Updated: improved custom dropdown styling and dropdown-specific scrollbar.)
+*/
+
+/* Core variables */
+:root{
+  --radius:12px;
+  --accent:#2563eb;
+  --accent-2:#4f7cff;
+  --muted:#888;
+  --transition:.18s cubic-bezier(.2,.9,.2,1);
+
+  --bg: #f5f7fb;
+  --surface: #ffffff;
+  --text: #0b1220;
+  --muted-text: #6b7280;
+  --border: rgba(0,0,0,0.06);
+  --elev: rgba(11,18,32,0.04);
+
+  --code-bg: #eef2ff;
+  --code-text: #0b1220;
+  --preview-bg: linear-gradient(180deg,transparent,rgba(0,0,0,0.02));
+  --modal-bg: rgba(11,18,32,0.6);
+  --input-bg: rgba(0,0,0,0.02);
+
+  --rename-bg-hover: rgba(79,124,255,0.08);
+  --delete-bg-hover: rgba(255,90,90,0.06);
+  --delete-color: #d64545;
+
+  --header-height: 56px;
+  --app-padding: 16px;
+
+  --sidebar-width: 320px;
+
+  /* dropdown tokens */
+  --select-bg: linear-gradient(180deg,#ffffff,#f6f9ff);
+  --select-border: rgba(0,0,0,0.08);
+  --select-color: var(--text);
+  --select-option-hover-bg: linear-gradient(90deg,var(--accent),var(--accent-2));
+  --select-option-hover-color: #ffffff;
+  --select-shadow: 0 8px 30px rgba(0,0,0,0.08);
+}
+
+/* Dark overrides */
+body.dark{
+  --bg: #0b0d10;
+  --surface: #0f151a;
+  --text: #e6eef6;
+  --muted-text: #8b95a1;
+  --border: rgba(255,255,255,0.04);
+  --elev: rgba(255,255,255,0.02);
+  --code-bg: #071023;
+  --code-text: #cfe6ff;
+  --preview-bg: linear-gradient(180deg,transparent,rgba(255,255,255,0.02));
+  --modal-bg: rgba(0,0,0,0.5);
+
+  --rename-bg-hover: rgba(112,150,255,0.08);
+  --delete-bg-hover: rgba(255,90,90,0.04);
+
+  --select-bg: linear-gradient(180deg,#0f151a,#11151a);
+  --select-border: rgba(255,255,255,0.06);
+  --select-color: var(--text);
+  --select-option-hover-bg: linear-gradient(90deg,#4f7cff,#2563eb);
+  --select-option-hover-color: #fff;
+  --select-shadow: 0 8px 30px rgba(0,0,0,0.28);
+}
+
+/* Reset / Layout */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:Inter,Segoe UI,Roboto,system-ui,Arial;background:var(--bg);color:var(--text);transition:background var(--transition),color var(--transition)}
+.header{height:var(--header-height);display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:var(--surface);border-bottom:1px solid var(--border)}
+.header h1{margin:0;font-size:18px}
+
+/* Primary button styling */
+.btn{
+  background:linear-gradient(180deg,var(--accent),var(--accent-2));
+  color:#fff;border:0;padding:8px 12px;border-radius:10px;cursor:pointer;box-shadow:0 6px 18px rgba(79,124,255,0.08);
+  transition:transform .12s ease,box-shadow .12s ease,opacity .12s ease;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.btn:hover{ transform:translateY(-1px); box-shadow:0 10px 26px rgba(79,124,255,0.12); opacity:0.98; }
+.btn:active{ transform:translateY(0); box-shadow:0 6px 12px rgba(79,124,255,0.08); }
+
+/* Scrollbar styling (global) */
+*::-webkit-scrollbar { height:12px; width:12px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(79,124,255,0.18), rgba(79,124,255,0.28));
+  border-radius:999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(79,124,255,0.26), rgba(79,124,255,0.36));
+}
+
+/* App container */
+.container{
+  width: calc(100% - (var(--app-padding) * 2));
+  max-width: none;
+  margin: var(--app-padding);
+  display:grid;
+  grid-template-columns:var(--sidebar-width) 1fr;
+  gap:18px;
+  height: calc(100vh - var(--header-height) - (var(--app-padding) * 2));
+}
+
+/* Sidebar & folder UI */
+.sidebar{background:var(--surface);padding:12px;border-radius:12px;border:1px solid var(--border);height:100%;overflow:auto}
+.folder-list{display:flex;flex-direction:column;gap:6px;min-height:80px}
+.folder{display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:8px;background:linear-gradient(180deg,transparent,var(--elev));cursor:grab;border:1px solid transparent;transition:background .12s,transform .08s}
+.folder-row{display:flex;align-items:center;gap:8px}
+.folder:hover{transform:translateY(-1px)}
+.folder.drag-over{outline:2px dashed var(--accent)}
+.folder.active{background:linear-gradient(180deg, rgba(79,124,255,0.08), rgba(79,124,255,0.04));border-color:rgba(79,124,255,0.14)}
+.folder .name{flex:1;font-weight:600;user-select:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.folder .count{font-size:12px;color:var(--muted-text)}
+.folder .grab{cursor:grab;padding:6px;border-radius:6px}
+.folder-actions{display:flex;gap:6px;align-items:center}
+.folder-actions button[data-act]{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:34px;height:30px;padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:13px}
+.folder-actions button[data-act]:focus{outline:2px solid rgba(0,0,0,0.06);outline-offset:2px}
+.folder-actions button[data-act="rename"]:hover{ background: var(--rename-bg-hover); border-color: rgba(79,124,255,0.14); }
+.folder-actions button[data-act="delete"]{ color:var(--delete-color); }
+.folder-actions button[data-act="delete"]:hover{ background: var(--delete-bg-hover); border-color: rgba(255,90,90,0.12); }
+
+/* Folder toggle caret */
+.folder-toggle{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;background:transparent;font-size:12px;color:var(--muted-text);transition:transform .18s ease}
+.folder-toggle.expanded{transform:rotate(90deg);color:var(--accent)}
+
+/* Expand/collapse */
+.folder-notes{padding-left:34px;display:block;overflow:hidden;max-height:0;opacity:0;transform:translateY(-6px);transition:max-height .32s cubic-bezier(.2,.9,.2,1),opacity .22s ease,transform .22s ease}
+.folder-notes.show{max-height:800px;opacity:1;transform:none}
+.folder-note{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:6px;background:transparent;border:1px solid transparent;cursor:pointer}
+.folder-note:hover{background:var(--elev)}
+.folder-note .title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.folder-note .meta{font-size:11px;color:var(--muted-text);margin-left:8px}
+
+/* Add/inline */
+.folder-add{width:100%;margin-top:10px;padding:8px;border-radius:8px;border:1px dashed var(--border);background:transparent;color:var(--muted-text);cursor:pointer}
+.folder-edit-input{width:100%;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--input-bg);color:var(--text)}
+
+/* Main + toolbar + tags */
+.main{display:flex;flex-direction:column;gap:12px;height:100%}
+.toolbar{display:flex;gap:8px;align-items:center}
+.search{flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
+.tag-filter{display:flex;gap:8px;flex-wrap:wrap}
+.tag-pill{padding:6px 8px;border-radius:999px;background:transparent;border:1px solid var(--border);cursor:pointer;font-size:13px;color:var(--text)}
+.tag-pill.active{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border-color:transparent}
+
+/* Editor */
+.editor{display:grid;grid-template-columns:1fr 420px;gap:12px;height:calc(100% - 56px)}
+.editor-left{background:var(--surface);padding:12px;border-radius:12px;border:1px solid var(--border);overflow:auto}
+.toolbar-md{display:flex;gap:6px;margin-bottom:8px}
+.md-btn{padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;color:var(--text)}
+.title-input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);margin-bottom:8px;background:transparent;color:var(--text)}
+.textarea{width:100%;min-height:260px;padding:12px;border-radius:8px;border:1px solid var(--border);resize:vertical;background:transparent;color:var(--text)}
+.editor-right{background:var(--surface);padding:12px;border-radius:12px;border:1px solid var(--border);overflow:auto}
+.preview{max-height:100%;overflow:auto;padding:12px;border-radius:8px;background:var(--preview-bg);color:var(--text)}
+
+/* Note cards */
+.notes-grid{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;transition:opacity .28s}
+.note-card{background:var(--surface);padding:12px;border-radius:12px;border:1px solid var(--border);cursor:grab;display:flex;flex-direction:column;gap:8px}
+.note-card.dragging{opacity:.5}
+.note-title{font-weight:700;margin-bottom:6px}
+.note-meta{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted-text)}
+.note-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.note-tag{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid var(--border)}
+
+/* Modal */
+.modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:var(--modal-bg);z-index:1100}
+.modal{background:var(--surface);padding:16px;border-radius:10px;border:1px solid var(--border);min-width:320px;max-width:90%;color:var(--text);box-shadow:0 10px 30px rgba(0,0,0,0.12)}
+.modal .message{margin-bottom:12px;color:var(--muted-text)}
+.modal .actions{display:flex;gap:8px;justify-content:flex-end}
+.modal .modal-btn{padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer}
+.modal .modal-btn.primary{background:var(--accent);color:#fff;border-color:transparent}
+
+/* Responsive & mobile toggle fix */
+.mobile-folders-btn{display:none;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer}
+@media (max-width:900px){
+  .container{grid-template-columns:1fr;margin:0;width:100%;height:calc(100vh - var(--header-height));}
+  .sidebar{display:none;position:fixed;left:0;top:var(--header-height);width:var(--sidebar-width);height:calc(100vh - var(--header-height));z-index:1200;box-shadow:0 10px 40px rgba(0,0,0,0.2)}
+  body.show-sidebar .sidebar{display:block}
+  .mobile-folders-btn{display:inline-flex}
+  .editor{grid-template-columns:1fr;height:auto}
+  .preview{max-height:260px}
+  .header h1{font-size:16px}
+}
+
+/* Small touch improvements */
+button{ -webkit-tap-highlight-color: transparent; }
+
+/* -----------------------------
+   Settings / custom dropdown
+   (Enhanced styling for .custom-select)
+   ----------------------------- */
+.custom-select{position:relative;width:260px; font-size:14px}
+.cs-selected{
+  padding:10px 12px;border-radius:10px;border:1px solid var(--select-border);background:var(--select-bg);cursor:pointer;display:flex;justify-content:space-between;align-items:center;
+  gap:12px;color:var(--select-color);transition:box-shadow var(--transition),transform var(--transition);
+  user-select:none;
+  min-height:44px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.cs-selected:hover{ box-shadow: 0 6px 18px rgba(0,0,0,0.06); transform:translateY(-1px); }
+.cs-selected:focus{ outline:2px solid rgba(79,124,255,0.18); outline-offset:2px; }
+
+.cs-selected .label { font-weight:600; }
+.cs-arrow{font-size:12px;color:var(--muted); transition: transform var(--transition) ease; }
+
+/* when options are open, rotate caret */
+.custom-select.open .cs-arrow{ transform: rotate(180deg); }
+
+.cs-options{
+  position:absolute;left:0;right:0;margin-top:10px;background:var(--surface);border-radius:10px;border:1px solid var(--select-border);box-shadow:var(--select-shadow);z-index:120;
+  max-height:220px;overflow:auto;display:none;padding:6px;
+  transform-origin: top center;
+  transition: opacity .14s ease, transform .14s ease;
+  opacity:0; transform: translateY(-6px);
+}
+.cs-options.show{display:block; opacity:1; transform: translateY(0);}
+
+.cs-option{
+  padding:10px 12px;border-radius:8px;cursor:pointer;margin:6px 4px;color:var(--select-color);
+  transition: background .12s ease, color .12s ease;
+}
+.cs-option:hover{ background: var(--select-option-hover-bg); color: var(--select-option-hover-color); }
+.cs-option.active{ background: var(--select-option-hover-bg); color: var(--select-option-hover-color); }
+
+/* keyboard focus for options */
+.cs-option:focus{ outline:2px solid rgba(79,124,255,0.12); outline-offset:2px; }
+
+/* options scrollbar styling (smaller track) */
+.cs-options::-webkit-scrollbar { width:10px; height:10px; }
+.cs-options::-webkit-scrollbar-track { background: transparent; }
+.cs-options::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(79,124,255,0.18), rgba(79,124,255,0.28));
+  border-radius:999px;
+  border: 2px solid transparent; background-clip: content-box;
+}
+
+/* End of file */
