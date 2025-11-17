@@ -47,7 +47,11 @@
       <div class="toolbar">
         <input id="search" class="search" placeholder="Search notes, tags, titles..." aria-label="Search notes" />
         <div class="tag-filter" id="tagFilter" aria-label="Tag filters"></div>
+        <!-- Import button (opens hidden file picker) -->
+        <button id="importBtn" class="btn" title="Import Markdown">⬆ Import</button>
         <button id="newNoteBtn" class="btn">New Note</button>
+        <!-- hidden file input for importing markdown files -->
+        <input id="mdFileInput" type="file" accept=".md,.markdown,text/markdown,application/markdown" multiple style="display:none" />
       </div>
 
       <div class="editor" role="region" aria-label="Editor area">
@@ -115,6 +119,8 @@ const folderList = qs('#folderList');
 const addFolderBtn = qs('#addFolder');
 const folderCountEl = qs('#folderCount');
 const newNoteBtn = qs('#newNoteBtn');
+const importBtn = qs('#importBtn');
+const mdFileInput = qs('#mdFileInput');
 const noteTitle = qs('#noteTitle');
 const noteBody = qs('#noteBody');
 const saveNoteBtn = qs('#saveNote');
@@ -345,7 +351,7 @@ function loadNotes(){
       card.innerHTML = `<div><div class="note-title">${escapeHtml(n.title||'Untitled')}</div><div class="note-body" style="color:var(--muted-text);font-size:13px">${escapeHtml(excerpt)}${(n.text||'').length>140?'…':''}</div></div><div class="note-meta"><div style="display:flex;gap:8px;align-items:center"><div style="font-size:12px;color:var(--muted-text)">${new Date(n.updated||n.created).toLocaleString()}</div></div><div class="note-actions"><button class="small-btn" data-act="open">Open</button><button class="small-btn" data-act="share">Share</button><button class="small-btn" data-act="delete">Delete</button></div></div><div class="note-tags">${(n.tags||[]).map(t=>`<span class="note-tag">${escapeHtml(t)}</span>`).join('')}</div>`;
       // open
       card.querySelector('[data-act="open"]').addEventListener('click', ()=>openNoteForEdit(n.id));
-      // share
+      // share -> download .md for this note
       card.querySelector('[data-act="share"]').addEventListener('click', ()=>shareNote(n));
       // delete
       card.querySelector('[data-act="delete"]').addEventListener('click', async ()=>{ const ok = await showConfirm('Delete note "'+(n.title||'Untitled')+'"?' ); if(!ok) return; const arrAll = notesMap[currentFolderId]||[]; const idx = arrAll.findIndex(x=>x.id===n.id); if(idx>-1){ arrAll.splice(idx,1); saveNotesMap(notesMap); // broadcast deletion
@@ -361,26 +367,72 @@ function loadNotes(){
   },120);
 }
 
-/* sharing helper for a note (UI opens the ORApp.shareNoteData helper) */
+/* share helper: download note as .md */
 async function shareNote(n){
   try{
-    const result = await (window.ORApp && window.ORApp.shareNoteData ? window.ORApp.shareNoteData(n) : Promise.resolve({ok:false}));
-    if(result && result.ok){
-      // show a small ephemeral feedback (use modal for now)
-      modalMessage.textContent = result.method === 'share' ? 'Shared via system share' : (result.method === 'clipboard' ? 'Copied note to clipboard' : 'Downloaded note');
-      modalBackdrop.style.display = 'flex';
-      setTimeout(()=> modalBackdrop.style.display = 'none', 1400);
-    } else {
-      modalMessage.textContent = 'Could not share note';
-      modalBackdrop.style.display = 'flex';
-      setTimeout(()=> modalBackdrop.style.display = 'none', 1400);
-    }
+    const title = n.title || 'Untitled';
+    const text = (n.text || '');
+    const payloadText = `# ${title}\n\n${text}`;
+    const safeTitle = (title || 'note').replace(/[^\w\-]+/g,'_').slice(0,60) || 'note';
+    const blob = new Blob([payloadText], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = safeTitle + '.md';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    // small ephemeral feedback
+    modalMessage.textContent = 'Downloaded note as .md';
+    modalBackdrop.style.display = 'flex';
+    setTimeout(()=> modalBackdrop.style.display = 'none', 1400);
   }catch(e){
-    modalMessage.textContent = 'Could not share note';
+    modalMessage.textContent = 'Could not download note';
     modalBackdrop.style.display = 'flex';
     setTimeout(()=> modalBackdrop.style.display = 'none', 1400);
   }
 }
+
+/* Import markdown files into current folder */
+importBtn.addEventListener('click', ()=> mdFileInput.click());
+mdFileInput.addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files || []);
+  if(files.length === 0) return;
+  const imported = [];
+  for(const file of files){
+    try{
+      const content = await file.text();
+      // derive title: prefer first markdown H1/ H2 heading, else filename without extension
+      const firstLine = (content.split(/\r?\n/).find(l => l.trim().length > 0) || '').trim();
+      const m = firstLine.match(/^#{1,6}\s+(.*)/);
+      let title = m && m[1] ? m[1].trim() : file.name.replace(/\.[^/.]+$/, '');
+      // ensure uniqueness in folder
+      let candidate = title || 'Untitled';
+      let suffix = 1;
+      while((notesMap[currentFolderId]||[]).some(n=>n.title === candidate)){
+        suffix++; candidate = `${title} ${suffix}`;
+      }
+      const id = uid('note');
+      const note = { id, title: candidate, text: content, tags: [], created: Date.now(), updated: Date.now() };
+      if(!notesMap[currentFolderId]) notesMap[currentFolderId]=[];
+      notesMap[currentFolderId].push(note);
+      saveNotesMap(notesMap);
+      // broadcast create so other tabs get it
+      try{ window.ORApp && window.ORApp.sendNoteMessage('created', { folderId: currentFolderId, note }); }catch(e){}
+      imported.push(file.name);
+    }catch(err){
+      // ignore single-file errors but continue importing others
+      console.error('Import failed for', file.name, err);
+    }
+  }
+  loadNotes(); updateTagFilters();
+  modalMessage.textContent = `Imported ${imported.length} file(s): ${imported.join(', ')}`;
+  modalBackdrop.style.display = 'flex';
+  setTimeout(()=> modalBackdrop.style.display = 'none', 2200);
+  // reset file input so same file can be re-picked later if desired
+  mdFileInput.value = '';
+});
 
 /* CRUD */
 function createNote(){
